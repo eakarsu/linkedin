@@ -1,0 +1,7 @@
+Some examples you can try:
+  - sarah.johnson@example.com (Senior Software Engineer in San Francisco)
+  - michael.chen@example.com (Product Manager in New York)
+  - emily.rodriguez@example.com (UX/UI Designer in Seattle)
+  - david.kim@example.com (Data Scientist in Austin)
+  - jessica.williams@example.com (Full Stack Developer in Boston)
+
