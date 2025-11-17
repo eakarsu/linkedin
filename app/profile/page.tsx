@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Card from '@mui/material/Card';
@@ -42,6 +43,7 @@ import ProfileCompleteness from '@/components/ProfileCompleteness';
 
 export default function ProfilePage() {
   const { data: session } = useSession();
+  const router = useRouter();
 
   // Profile data from API
   const [profileData, setProfileData] = useState<any>(null);
@@ -92,8 +94,6 @@ export default function ProfilePage() {
   const [skillsDialog, setSkillsDialog] = useState(false);
   const [experienceDialog, setExperienceDialog] = useState(false);
   const [educationDialog, setEducationDialog] = useState(false);
-  const [activityDialog, setActivityDialog] = useState(false);
-  const [userPosts, setUserPosts] = useState<any[]>([]);
 
   // Section data
   const [languages, setLanguages] = useState<Array<{ name: string; proficiency: string }>>([]);
@@ -152,19 +152,8 @@ export default function ProfilePage() {
     setOpenToWork(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleShowAllActivity = async () => {
-    if (session?.user?.id) {
-      try {
-        const response = await fetch(`/api/posts?authorId=${session.user.id}`);
-        if (response.ok) {
-          const posts = await response.json();
-          setUserPosts(posts);
-          setActivityDialog(true);
-        }
-      } catch (error) {
-        console.error('Error fetching user posts:', error);
-      }
-    }
+  const handleShowAllActivity = () => {
+    router.push('/activity');
   };
 
   const handleMoreMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -2244,52 +2233,6 @@ export default function ProfilePage() {
           </Alert>
         </Snackbar>
 
-        {/* All Activity Dialog */}
-        <Dialog open={activityDialog} onClose={() => setActivityDialog(false)} maxWidth="md" fullWidth>
-          <DialogTitle>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                All Activity
-              </Typography>
-              <IconButton onClick={() => setActivityDialog(false)}>
-                <CloseIcon />
-              </IconButton>
-            </Box>
-          </DialogTitle>
-          <DialogContent>
-            {userPosts.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="body1" color="text.secondary">
-                  No posts yet
-                </Typography>
-              </Box>
-            ) : (
-              <List>
-                {userPosts.map((post) => (
-                  <ListItem key={post.id} sx={{ flexDirection: 'column', alignItems: 'flex-start', borderBottom: '1px solid #e0e0e0', py: 2 }}>
-                    <Typography variant="body1" sx={{ mb: 1 }}>
-                      {post.content}
-                    </Typography>
-                    {post.image && (
-                      <Box component="img" src={post.image} alt="Post image" sx={{ maxWidth: '100%', borderRadius: 1, mt: 1 }} />
-                    )}
-                    <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        {post.likes?.length || 0} likes
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {post.comments?.length || 0} comments
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {new Date(post.createdAt).toLocaleDateString()}
-                      </Typography>
-                    </Box>
-                  </ListItem>
-                ))}
-              </List>
-            )}
-          </DialogContent>
-        </Dialog>
       </Container>
     </Box>
   );
