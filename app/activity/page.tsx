@@ -15,7 +15,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import Header from '@/components/Header';
 
 export default function ActivityPage() {
   const { data: session, status } = useSession();
@@ -60,9 +59,7 @@ export default function ActivityPage() {
   }
 
   return (
-    <>
-      <Header />
-      <Container maxWidth="md" sx={{ mt: 10, mb: 4 }}>
+    <Container maxWidth="md" sx={{ mt: 10, mb: 4 }}>
         <Card sx={{ borderRadius: 2 }}>
           <CardContent>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -125,7 +122,6 @@ export default function ActivityPage() {
             )}
           </CardContent>
         </Card>
-      </Container>
-    </>
+    </Container>
   );
 }

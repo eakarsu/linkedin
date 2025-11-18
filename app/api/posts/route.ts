@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 // GET all posts
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const authorId = searchParams.get('authorId');
+
     const posts = await prisma.post.findMany({
+      where: authorId ? { authorId } : undefined,
       include: {
         author: {
           select: {
