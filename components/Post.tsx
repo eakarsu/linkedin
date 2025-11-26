@@ -218,7 +218,7 @@ export default function Post({ postId, author, authorAvatar, title, timestamp, c
             author: {
               id: session.user.id,
               name: session.user.name || 'You',
-              avatar: session.user.image,
+              avatar: session.user.image || undefined,
             },
             content: commentText,
             createdAt: 'Just now',
@@ -324,7 +324,7 @@ export default function Post({ postId, author, authorAvatar, title, timestamp, c
           onMouseLeave={() => {
             // Keep popover open while hovering over it
             setTimeout(() => {
-              if (!anchorEl || document.activeElement?.closest('.MuiPopover-root') === null) {
+              if (!anchorEl || window.document.activeElement?.closest('.MuiPopover-root') === null) {
                 // Popover will handle its own mouse leave
               }
             }, 100);

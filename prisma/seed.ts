@@ -453,34 +453,55 @@ async function main() {
   for (const user of users) {
     const numNotifications = 5 + Math.floor(Math.random() * 15);
     for (let i = 0; i < numNotifications; i++) {
-      const otherUser = users[Math.floor(Math.random() * users.length)];
-      const types = ['like', 'comment', 'connection', 'message', 'job'];
+      const otherUser = users.filter(u => u.id !== user.id)[Math.floor(Math.random() * (users.length - 1))];
+      const types = ['like', 'comment', 'connection', 'profile_view', 'birthday', 'job'];
       const type = types[Math.floor(Math.random() * types.length)];
 
       let content = '';
+      let link: string | null = null;
+      let postId: string | null = null;
+
+      // Get a random post from this user for post-related notifications
+      const userPosts = posts.filter(p => p.authorId === user.id);
+      const randomPost = userPosts.length > 0 ? userPosts[Math.floor(Math.random() * userPosts.length)] : null;
+
       switch (type) {
         case 'like':
           content = `${otherUser.name} liked your post`;
+          postId = randomPost?.id || null;
+          link = postId ? `/post/${postId}` : null;
           break;
         case 'comment':
-          content = `${otherUser.name} commented on your post`;
+          content = `${otherUser.name} commented on your post: "Great insights!"`;
+          postId = randomPost?.id || null;
+          link = postId ? `/post/${postId}` : null;
           break;
         case 'connection':
           content = `${otherUser.name} wants to connect with you`;
+          link = `/network`;
           break;
-        case 'message':
-          content = `New message from ${otherUser.name}`;
+        case 'profile_view':
+          content = `${otherUser.name} viewed your profile`;
+          link = `/profile/${otherUser.id}`;
+          break;
+        case 'birthday':
+          content = `It's ${otherUser.name}'s birthday today! Wish them a happy birthday`;
+          link = `/profile/${otherUser.id}`;
           break;
         case 'job':
           content = `New job posting: ${jobTitles[i % jobTitles.length]} at ${companies[i % companies.length]}`;
+          link = `/jobs`;
           break;
       }
 
       await prisma.notification.create({
         data: {
           userId: user.id,
+          actorId: type !== 'job' ? otherUser.id : null,
+          postId,
           type,
           content,
+          link,
           read: Math.random() > 0.4,
           createdAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
         },
@@ -513,6 +534,268 @@ async function main() {
 
   console.log(`✅ Created ${storyCount} stories`);
 
+  // Create companies
+  console.log('🏢 Creating companies...');
+  const companyData = [
+    { name: 'Google', tagline: 'Technology, Information and Internet', industry: 'Technology', companySize: '100,000+ employees', headquarters: 'Mountain View, CA', founded: '1998', specialties: 'Search, Ads, Mobile, Android, AI, Cloud', website: 'https://google.com' },
+    { name: 'Microsoft', tagline: 'Software & Cloud Services', industry: 'Technology', companySize: '100,000+ employees', headquarters: 'Redmond, WA', founded: '1975', specialties: 'Software, Cloud, Gaming, AI, Enterprise', website: 'https://microsoft.com' },
+    { name: 'Apple', tagline: 'Consumer Electronics & Software', industry: 'Technology', companySize: '100,000+ employees', headquarters: 'Cupertino, CA', founded: '1976', specialties: 'Hardware, Software, Services, Design', website: 'https://apple.com' },
+    { name: 'Amazon', tagline: 'E-commerce & Cloud Computing', industry: 'Technology', companySize: '100,000+ employees', headquarters: 'Seattle, WA', founded: '1994', specialties: 'E-commerce, AWS, Streaming, Logistics', website: 'https://amazon.com' },
+    { name: 'Meta', tagline: 'Social Technology Company', industry: 'Technology', companySize: '50,000+ employees', headquarters: 'Menlo Park, CA', founded: '2004', specialties: 'Social Media, VR, AR, Messaging', website: 'https://meta.com' },
+    { name: 'Netflix', tagline: 'Entertainment Services', industry: 'Entertainment', companySize: '10,000+ employees', headquarters: 'Los Gatos, CA', founded: '1997', specialties: 'Streaming, Original Content, Entertainment', website: 'https://netflix.com' },
+    { name: 'Tesla', tagline: 'Electric Vehicles & Clean Energy', industry: 'Automotive', companySize: '100,000+ employees', headquarters: 'Austin, TX', founded: '2003', specialties: 'Electric Vehicles, Energy Storage, Solar', website: 'https://tesla.com' },
+    { name: 'Spotify', tagline: 'Audio Streaming', industry: 'Entertainment', companySize: '5,000+ employees', headquarters: 'Stockholm, Sweden', founded: '2006', specialties: 'Music Streaming, Podcasts, Audio', website: 'https://spotify.com' },
+    { name: 'Airbnb', tagline: 'Travel & Hospitality', industry: 'Travel', companySize: '5,000+ employees', headquarters: 'San Francisco, CA', founded: '2008', specialties: 'Travel, Accommodations, Experiences', website: 'https://airbnb.com' },
+    { name: 'Stripe', tagline: 'Financial Infrastructure', industry: 'Fintech', companySize: '5,000+ employees', headquarters: 'San Francisco, CA', founded: '2010', specialties: 'Payments, Financial Services, APIs', website: 'https://stripe.com' },
+  ];
+
+  const createdCompanies = [];
+  for (let i = 0; i < companyData.length; i++) {
+    const company = await prisma.company.create({
+      data: {
+        ...companyData[i],
+        description: `${companyData[i].name} is a leading company in ${companyData[i].industry}. We are committed to innovation and excellence in everything we do.`,
+        logo: `https://i.pravatar.cc/150?img=${50 + i}`,
+        coverImage: `https://picsum.photos/seed/company${i}/1200/300`,
+        followers: Math.floor(Math.random() * 20000000) + 1000000,
+      },
+    });
+    createdCompanies.push(company);
+  }
+  console.log(`✅ Created ${createdCompanies.length} companies`);
+
+  // Create company employees
+  console.log('👔 Creating company employees...');
+  let employeeCount = 0;
+  for (const company of createdCompanies) {
+    const numEmployees = 3 + Math.floor(Math.random() * 5);
+    for (let i = 0; i < numEmployees; i++) {
+      const user = users[Math.floor(Math.random() * users.length)];
+      try {
+        await prisma.companyEmployee.create({
+          data: {
+            companyId: company.id,
+            userId: user.id,
+            title: titles[Math.floor(Math.random() * titles.length)],
+            startDate: new Date(Date.now() - Math.random() * 5 * 365 * 24 * 60 * 60 * 1000),
+          },
+        });
+        employeeCount++;
+      } catch (error) {
+        // Skip duplicate employees
+      }
+    }
+  }
+  console.log(`✅ Created ${employeeCount} company employees`);
+
+  // Create courses
+  console.log('📚 Creating courses...');
+  const courseData = [
+    { title: 'React - The Complete Guide 2024', instructor: 'Maximilian Schwarzmüller', duration: '8h 30m', level: 'Intermediate', category: 'Web Development', rating: 4.8 },
+    { title: 'Complete Python Bootcamp', instructor: 'Jose Portilla', duration: '12h 15m', level: 'Beginner', category: 'Programming', rating: 4.9 },
+    { title: 'UI/UX Design Fundamentals', instructor: 'Sarah Johnson', duration: '6h 45m', level: 'Beginner', category: 'Design', rating: 4.7 },
+    { title: 'AWS Certified Solutions Architect', instructor: 'Stephane Maarek', duration: '15h 20m', level: 'Advanced', category: 'Cloud Computing', rating: 4.9 },
+    { title: 'Machine Learning A-Z', instructor: 'Kirill Eremenko', duration: '20h 10m', level: 'Intermediate', category: 'Data Science', rating: 4.8 },
+    { title: 'Digital Marketing Masterclass', instructor: 'Phil Ebiner', duration: '10h 30m', level: 'Beginner', category: 'Marketing', rating: 4.6 },
+    { title: 'JavaScript: The Advanced Concepts', instructor: 'Andrei Neagoie', duration: '14h 45m', level: 'Advanced', category: 'Web Development', rating: 4.9 },
+    { title: 'Product Management Essentials', instructor: 'Cole Mercer', duration: '8h 20m', level: 'Beginner', category: 'Business', rating: 4.7 },
+    { title: 'Docker & Kubernetes Complete Guide', instructor: 'Stephen Grider', duration: '18h 30m', level: 'Intermediate', category: 'DevOps', rating: 4.8 },
+    { title: 'Leadership & Management Skills', instructor: 'Chris Croft', duration: '5h 15m', level: 'Beginner', category: 'Business', rating: 4.5 },
+    { title: 'Data Analysis with SQL', instructor: 'Maven Analytics', duration: '9h 40m', level: 'Intermediate', category: 'Data Science', rating: 4.7 },
+    { title: 'Figma UI/UX Design', instructor: 'Daniel Walter Scott', duration: '11h 20m', level: 'Intermediate', category: 'Design', rating: 4.8 },
+  ];
+
+  const createdCourses = [];
+  for (let i = 0; i < courseData.length; i++) {
+    const course = await prisma.course.create({
+      data: {
+        ...courseData[i],
+        description: `A comprehensive course on ${courseData[i].title}. Learn from industry experts and gain practical skills.`,
+        thumbnail: `https://picsum.photos/seed/course${i}/400/225`,
+        students: Math.floor(Math.random() * 300000) + 50000,
+        price: Math.random() > 0.3 ? Math.floor(Math.random() * 150) + 29.99 : 0,
+        isFree: Math.random() > 0.7,
+      },
+    });
+    createdCourses.push(course);
+  }
+  console.log(`✅ Created ${createdCourses.length} courses`);
+
+  // Create course enrollments
+  console.log('📖 Creating course enrollments...');
+  let enrollmentCount = 0;
+  for (const user of users.slice(0, 20)) {
+    const numEnrollments = 1 + Math.floor(Math.random() * 4);
+    for (let i = 0; i < numEnrollments; i++) {
+      const course = createdCourses[Math.floor(Math.random() * createdCourses.length)];
+      try {
+        await prisma.courseEnrollment.create({
+          data: {
+            courseId: course.id,
+            userId: user.id,
+            progress: Math.floor(Math.random() * 100),
+            completed: Math.random() > 0.7,
+            lastWatched: new Date(Date.now() - Math.random() * 14 * 24 * 60 * 60 * 1000),
+          },
+        });
+        enrollmentCount++;
+      } catch (error) {
+        // Skip duplicate enrollments
+      }
+    }
+  }
+  console.log(`✅ Created ${enrollmentCount} course enrollments`);
+
+  // Create groups
+  console.log('👥 Creating groups...');
+  const groupData = [
+    { name: 'React Developers', industry: 'Technology', description: 'A community for React developers to share knowledge and best practices.' },
+    { name: 'Startup Founders Network', industry: 'Business', description: 'Connect with fellow entrepreneurs and share startup experiences.' },
+    { name: 'AI & Machine Learning', industry: 'Technology', description: 'Discuss the latest in artificial intelligence and machine learning.' },
+    { name: 'Product Management Community', industry: 'Business', description: 'For product managers to share insights and career advice.' },
+    { name: 'UX/UI Designers', industry: 'Design', description: 'A space for designers to showcase work and discuss trends.' },
+    { name: 'Remote Work Professionals', industry: 'Business', description: 'Tips and discussions about remote work lifestyle.' },
+    { name: 'Cloud Computing Experts', industry: 'Technology', description: 'AWS, Azure, GCP - discuss all things cloud.' },
+    { name: 'Data Science & Analytics', industry: 'Technology', description: 'For data professionals to share knowledge and opportunities.' },
+    { name: 'Marketing Professionals', industry: 'Marketing', description: 'Digital marketing, SEO, content strategy discussions.' },
+    { name: 'Tech Leadership Forum', industry: 'Technology', description: 'For CTOs, VPs, and engineering leaders.' },
+  ];
+
+  const createdGroups = [];
+  for (let i = 0; i < groupData.length; i++) {
+    const owner = users[Math.floor(Math.random() * users.length)];
+    const group = await prisma.group.create({
+      data: {
+        ...groupData[i],
+        rules: '1. Be respectful\n2. No spam\n3. Stay on topic\n4. Share valuable content',
+        image: `https://picsum.photos/seed/group${i}/200/200`,
+        coverImage: `https://picsum.photos/seed/groupcover${i}/1200/300`,
+        isPublic: Math.random() > 0.2,
+        ownerId: owner.id,
+      },
+    });
+    createdGroups.push(group);
+
+    // Add owner as member
+    await prisma.groupMember.create({
+      data: {
+        groupId: group.id,
+        userId: owner.id,
+        role: 'owner',
+      },
+    });
+  }
+  console.log(`✅ Created ${createdGroups.length} groups`);
+
+  // Create group members
+  console.log('👤 Creating group members...');
+  let memberCount = 0;
+  for (const group of createdGroups) {
+    const numMembers = 10 + Math.floor(Math.random() * 20);
+    for (let i = 0; i < numMembers; i++) {
+      const user = users[Math.floor(Math.random() * users.length)];
+      try {
+        await prisma.groupMember.create({
+          data: {
+            groupId: group.id,
+            userId: user.id,
+            role: Math.random() > 0.9 ? 'admin' : 'member',
+          },
+        });
+        memberCount++;
+      } catch (error) {
+        // Skip duplicate members
+      }
+    }
+  }
+  console.log(`✅ Created ${memberCount} group members`);
+
+  // Create group posts
+  console.log('📝 Creating group posts...');
+  let groupPostCount = 0;
+  for (const group of createdGroups) {
+    const numPosts = 3 + Math.floor(Math.random() * 7);
+    for (let i = 0; i < numPosts; i++) {
+      const author = users[Math.floor(Math.random() * users.length)];
+      await prisma.groupPost.create({
+        data: {
+          content: postContents[Math.floor(Math.random() * postContents.length)]
+            .replace('{company}', companies[i % companies.length])
+            .replace('{title}', titles[i % titles.length]),
+          image: Math.random() > 0.7 ? `https://picsum.photos/seed/gpost${groupPostCount}/800/600` : null,
+          groupId: group.id,
+          authorId: author.id,
+          createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
+        },
+      });
+      groupPostCount++;
+    }
+  }
+  console.log(`✅ Created ${groupPostCount} group posts`);
+
+  // Create events
+  console.log('📅 Creating events...');
+  const eventData = [
+    { title: 'Tech Innovation Summit 2024', type: 'hybrid', description: 'Join industry leaders for a day of innovation and networking.' },
+    { title: 'React Conference', type: 'in-person', description: 'The biggest React conference of the year.' },
+    { title: 'AI & Future of Work Webinar', type: 'online', description: 'Explore how AI is transforming the workplace.' },
+    { title: 'Startup Pitch Night', type: 'in-person', description: 'Watch startups pitch to VCs and angels.' },
+    { title: 'Product Management Workshop', type: 'online', description: 'Learn PM best practices from experts.' },
+    { title: 'Design Systems Conference', type: 'hybrid', description: 'Everything about building scalable design systems.' },
+    { title: 'Cloud Architecture Deep Dive', type: 'online', description: 'Advanced patterns for cloud-native applications.' },
+    { title: 'Leadership Summit', type: 'in-person', description: 'Develop your leadership skills with top executives.' },
+    { title: 'Data Science Bootcamp', type: 'online', description: 'Intensive 3-day data science training.' },
+    { title: 'Networking Happy Hour', type: 'in-person', description: 'Casual networking with tech professionals.' },
+    { title: 'Women in Tech Conference', type: 'hybrid', description: 'Celebrating and empowering women in technology.' },
+    { title: 'DevOps Best Practices', type: 'online', description: 'Learn DevOps from Netflix, Google, and Amazon engineers.' },
+  ];
+
+  const createdEvents = [];
+  for (let i = 0; i < eventData.length; i++) {
+    const organizer = users[Math.floor(Math.random() * users.length)];
+    const company = Math.random() > 0.5 ? createdCompanies[Math.floor(Math.random() * createdCompanies.length)] : null;
+    const startDate = new Date(Date.now() + (Math.random() * 60 - 10) * 24 * 60 * 60 * 1000);
+    const event = await prisma.event.create({
+      data: {
+        ...eventData[i],
+        image: `https://picsum.photos/seed/event${i}/800/400`,
+        location: eventData[i].type !== 'online' ? locations[Math.floor(Math.random() * locations.length)] : null,
+        eventUrl: eventData[i].type !== 'in-person' ? `https://zoom.us/j/${Math.floor(Math.random() * 10000000000)}` : null,
+        startDate,
+        endDate: new Date(startDate.getTime() + (2 + Math.random() * 6) * 60 * 60 * 1000),
+        timezone: 'America/Los_Angeles',
+        organizerId: organizer.id,
+        companyId: company?.id || null,
+        isPublic: true,
+      },
+    });
+    createdEvents.push(event);
+  }
+  console.log(`✅ Created ${createdEvents.length} events`);
+
+  // Create event attendees
+  console.log('🎟️ Creating event attendees...');
+  let attendeeCount = 0;
+  for (const event of createdEvents) {
+    const numAttendees = 20 + Math.floor(Math.random() * 80);
+    for (let i = 0; i < numAttendees; i++) {
+      const user = users[Math.floor(Math.random() * users.length)];
+      try {
+        await prisma.eventAttendee.create({
+          data: {
+            eventId: event.id,
+            userId: user.id,
+            status: ['going', 'interested', 'interested'][Math.floor(Math.random() * 3)],
+          },
+        });
+        attendeeCount++;
+      } catch (error) {
+        // Skip duplicate attendees
+      }
+    }
+  }
+  console.log(`✅ Created ${attendeeCount} event attendees`);
+
   console.log('\n🎉 Database seeding completed successfully!');
   console.log('\n📊 Summary:');
   console.log(`   • Users: ${users.length}`);
@@ -527,6 +810,15 @@ async function main() {
   console.log(`   • Messages: ${messageCount}`);
   console.log(`   • Notifications: ${notificationCount}`);
   console.log(`   • Stories: ${storyCount}`);
+  console.log(`   • Companies: ${createdCompanies.length}`);
+  console.log(`   • Company Employees: ${employeeCount}`);
+  console.log(`   • Courses: ${createdCourses.length}`);
+  console.log(`   • Course Enrollments: ${enrollmentCount}`);
+  console.log(`   • Groups: ${createdGroups.length}`);
+  console.log(`   • Group Members: ${memberCount}`);
+  console.log(`   • Group Posts: ${groupPostCount}`);
+  console.log(`   • Events: ${createdEvents.length}`);
+  console.log(`   • Event Attendees: ${attendeeCount}`);
   console.log('\n💡 You can login with any email (e.g., sarah.johnson@example.com) and password: password123');
 }
 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { PrismaClient } from '@prisma/client';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 
 const prisma = new PrismaClient();
 
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       select: { [section]: true },
     });
 
-    const currentData = (user?.[section as keyof typeof user] as any[]) || [];
+    const currentData = ((user?.[section as keyof typeof user] as unknown) as any[]) || [];
     const newData = [...currentData, { ...data, id: Date.now().toString() }];
 
     // Update user
@@ -83,7 +83,7 @@ export async function PATCH(request: Request) {
       select: { [section]: true },
     });
 
-    const currentData = (user?.[section as keyof typeof user] as any[]) || [];
+    const currentData = ((user?.[section as keyof typeof user] as unknown) as any[]) || [];
     const newData = currentData.map((item: any) =>
       item.id === itemId ? { ...item, ...data } : item
     );

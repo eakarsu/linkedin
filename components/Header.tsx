@@ -27,6 +27,9 @@ import ArticleIcon from '@mui/icons-material/Article';
 import AppsIcon from '@mui/icons-material/Apps';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SettingsIcon from '@mui/icons-material/Settings';
+import EventIcon from '@mui/icons-material/Event';
+import GroupIcon from '@mui/icons-material/Group';
+import BusinessIcon from '@mui/icons-material/Business';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -276,6 +279,24 @@ export default function Header() {
             </ListItemIcon>
             <ListItemText>Learning</ListItemText>
           </MenuItem>
+          <MenuItem onClick={() => handleMenuNavigate('/events')}>
+            <ListItemIcon>
+              <EventIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Events</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => handleMenuNavigate('/groups')}>
+            <ListItemIcon>
+              <GroupIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Groups</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => handleMenuNavigate('/companies')}>
+            <ListItemIcon>
+              <BusinessIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Companies</ListItemText>
+          </MenuItem>
           <MenuItem onClick={() => handleMenuNavigate('/premium')}>
             <ListItemIcon>
               <WorkspacePremiumIcon fontSize="small" />
@@ -287,12 +308,6 @@ export default function Header() {
               <ArticleIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText>Articles</ListItemText>
-          </MenuItem>
-          <MenuItem onClick={() => handleMenuNavigate('/about')}>
-            <ListItemIcon>
-              <BusinessCenterIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>About</ListItemText>
           </MenuItem>
         </Menu>
 

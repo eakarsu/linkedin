@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { PrismaClient } from '@prisma/client';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 
 const prisma = new PrismaClient();
 
 // GET /api/posts/[id]/comments - Get comments for a post
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const postId = params.id;
+    const { id: postId } = await params;
 
     // Check if post exists
     const post = await prisma.post.findUnique({
@@ -58,7 +58,7 @@ export async function GET(
 // POST /api/posts/[id]/comments - Add a comment to a post
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -70,7 +70,7 @@ export async function POST(
       );
     }
 
-    const postId = params.id;
+    const { id: postId } = await params;
     const { text } = await request.json();
 
     if (!text || !text.trim()) {

@@ -12,11 +12,26 @@ import Typography from '@mui/material/Typography';
 import Link from '@mui/material/Link';
 import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+
+const demoUsers = [
+  { email: 'sarah.johnson@example.com', name: 'Sarah Johnson', title: 'Senior Software Engineer' },
+  { email: 'michael.chen@example.com', name: 'Michael Chen', title: 'Product Manager' },
+  { email: 'emily.rodriguez@example.com', name: 'Emily Rodriguez', title: 'UX/UI Designer' },
+  { email: 'david.kim@example.com', name: 'David Kim', title: 'Data Scientist' },
+  { email: 'jessica.williams@example.com', name: 'Jessica Williams', title: 'Full Stack Developer' },
+  { email: 'james.anderson@example.com', name: 'James Anderson', title: 'Marketing Manager' },
+  { email: 'maria.garcia@example.com', name: 'Maria Garcia', title: 'Business Analyst' },
+  { email: 'robert.taylor@example.com', name: 'Robert Taylor', title: 'Sales Director' },
+];
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState('password123');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -91,6 +106,44 @@ export default function LoginPage() {
             </Alert>
           )}
 
+          {/* Demo User Selector */}
+          <Box sx={{ mb: 3, p: 2, bgcolor: '#f0f7ff', borderRadius: 2, border: '1px solid #0a66c2' }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: '#0a66c2' }}>
+              Demo Account - Quick Login
+            </Typography>
+            <FormControl fullWidth size="small">
+              <InputLabel>Select a demo user</InputLabel>
+              <Select
+                value={email}
+                label="Select a demo user"
+                onChange={(e) => setEmail(e.target.value)}
+                sx={{ bgcolor: 'white' }}
+              >
+                {demoUsers.map((user) => (
+                  <MenuItem key={user.email} value={user.email}>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {user.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {user.title}
+                      </Typography>
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              Password: password123 (pre-filled)
+            </Typography>
+          </Box>
+
+          <Divider sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              or enter manually
+            </Typography>
+          </Divider>
+
           <form onSubmit={handleSubmit}>
             <TextField
               fullWidth
@@ -101,6 +154,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               sx={{ mb: 2 }}
+              placeholder="e.g. sarah.johnson@example.com"
             />
             <TextField
               fullWidth
@@ -111,6 +165,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               sx={{ mb: 2 }}
+              helperText="Demo password: password123"
             />
 
             <Link href="#" sx={{ mb: 3, display: 'block', textDecoration: 'none' }}>

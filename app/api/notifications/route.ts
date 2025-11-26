@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { PrismaClient } from '@prisma/client';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 
 const prisma = new PrismaClient();
 
@@ -9,8 +9,10 @@ const prisma = new PrismaClient();
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
+    console.log('Notifications API - Session:', session?.user?.id, session?.user?.email);
 
     if (!session?.user?.id) {
+      console.log('Notifications API - No session user ID');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -28,15 +30,40 @@ export async function GET(request: Request) {
       where.read = false;
     }
 
+    console.log('Notifications API - Querying for userId:', session.user.id);
+
     const notifications = await prisma.notification.findMany({
       where,
       orderBy: {
         createdAt: 'desc',
       },
       take: 50, // Limit to 50 most recent notifications
+      include: {
+        actor: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            title: true,
+          },
+        },
+        post: {
+          select: {
+            id: true,
+          },
+        },
+      },
     });
 
-    return NextResponse.json(notifications);
+    console.log('Notifications API - Found', notifications.length, 'notifications');
+
+    // Transform the response to include postId at the top level
+    const transformedNotifications = notifications.map((n) => ({
+      ...n,
+      postId: n.post?.id || null,
+    }));
+
+    return NextResponse.json(transformedNotifications);
   } catch (error) {
     console.error('Notifications fetch error:', error);
     return NextResponse.json(
@@ -58,7 +85,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { userId, type, content, link } = await request.json();
+    const { userId, type, content, link, actorId, postId } = await request.json();
 
     if (!userId || !type || !content) {
       return NextResponse.json(
@@ -73,6 +100,18 @@ export async function POST(request: Request) {
         type,
         content,
         link,
+        actorId,
+        postId,
+      },
+      include: {
+        actor: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            title: true,
+          },
+        },
       },
     });
 

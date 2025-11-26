@@ -184,9 +184,8 @@ export default function MyItemsPage() {
                           title={post.author.title || ''}
                           timestamp={getRelativeTime(post.createdAt)}
                           content={post.content}
-                          image={post.image}
-                          video={post.video}
-                          authorAvatar={post.author.avatar}
+                          image={post.image || undefined}
+                          authorAvatar={post.author.avatar || undefined}
                           initialLikes={[]}
                           initialComments={[]}
                         />

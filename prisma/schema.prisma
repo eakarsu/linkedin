@@ -35,11 +35,21 @@ model User {
   sentMessages     Message[]         @relation("SentMessages")
   receivedMessages Message[]         @relation("ReceivedMessages")
   notifications    Notification[]
+  actedNotifications Notification[] @relation("NotificationActor")
   jobApplications  JobApplication[]
   jobsPosted       Job[]             @relation("JobPoster")
   savedPosts       Json?
   stories          Story[]
   profileCompleteness Int?           @default(0)
+
+  // New relations
+  companyEmployments CompanyEmployee[]
+  organizedEvents    Event[]           @relation("EventOrganizer")
+  eventAttendances   EventAttendee[]
+  ownedGroups        Group[]           @relation("GroupOwner")
+  groupMemberships   GroupMember[]
+  groupPosts         GroupPost[]
+  courseEnrollments  CourseEnrollment[]
 }
 
 model Post {
@@ -52,8 +62,9 @@ model Post {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  comments Comment[]
-  likes    Like[]
+  comments      Comment[]
+  likes         Like[]
+  notifications Notification[]
 }
 
 model Article {
@@ -122,6 +133,8 @@ model Job {
   benefits        String?
   posterId        String
   poster          User             @relation("JobPoster", fields: [posterId], references: [id], onDelete: Cascade)
+  companyId       String?
+  companyRef      Company?         @relation("CompanyJobs", fields: [companyId], references: [id], onDelete: SetNull)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   applications    JobApplication[]
@@ -157,6 +170,10 @@ model Notification {
   id        String   @id @default(uuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actorId   String?
+  actor     User?    @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+  postId    String?
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
   type      String   // like, comment, connection, message, job
   content   String
   link      String?
@@ -174,4 +191,147 @@ model Story {
   views     Int      @default(0)
   expiresAt DateTime
   createdAt DateTime @default(now())
+}
+
+model Company {
+  id          String   @id @default(uuid())
+  name        String
+  tagline     String?
+  description String?
+  industry    String?
+  companySize String?
+  headquarters String?
+  founded     String?
+  specialties String?
+  website     String?
+  logo        String?
+  coverImage  String?
+  followers   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  jobs        Job[]    @relation("CompanyJobs")
+  events      Event[]
+  employees   CompanyEmployee[]
+}
+
+model CompanyEmployee {
+  id        String   @id @default(uuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String?
+  startDate DateTime?
+  createdAt DateTime @default(now())
+
+  @@unique([companyId, userId])
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  image       String?
+  type        String   @default("online") // online, in-person, hybrid
+  location    String?
+  eventUrl    String?
+  startDate   DateTime
+  endDate     DateTime?
+  timezone    String?
+  organizerId String
+  organizer   User     @relation("EventOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
+  companyId   String?
+  company     Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  isPublic    Boolean  @default(true)
+  attendees   EventAttendee[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model EventAttendee {
+  id        String   @id @default(uuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    String   @default("going") // going, interested, not_going
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, userId])
+}
+
+model Group {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  rules       String?
+  image       String?
+  coverImage  String?
+  isPublic    Boolean  @default(true)
+  industry    String?
+  ownerId     String
+  owner       User     @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members     GroupMember[]
+  posts       GroupPost[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model GroupMember {
+  id        String   @id @default(uuid())
+  groupId   String
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   @default("member") // owner, admin, member
+  createdAt DateTime @default(now())
+
+  @@unique([groupId, userId])
+}
+
+model GroupPost {
+  id        String   @id @default(uuid())
+  content   String
+  image     String?
+  groupId   String
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  thumbnail   String?
+  instructor  String
+  duration    String?
+  level       String?  // Beginner, Intermediate, Advanced
+  category    String?
+  rating      Float    @default(0)
+  students    Int      @default(0)
+  price       Float    @default(0)
+  isFree      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  enrollments CourseEnrollment[]
+}
+
+model CourseEnrollment {
+  id        String   @id @default(uuid())
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  progress  Int      @default(0) // percentage 0-100
+  completed Boolean  @default(false)
+  lastWatched DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([courseId, userId])
 }

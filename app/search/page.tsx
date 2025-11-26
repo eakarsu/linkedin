@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import Box from '@mui/material/Box';
@@ -14,6 +14,7 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Grid2 from '@mui/material/Unstable_Grid2';
 import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import WorkIcon from '@mui/icons-material/Work';
 import PeopleIcon from '@mui/icons-material/People';
@@ -92,7 +93,7 @@ const searchResults = {
   ],
 };
 
-export default function SearchPage() {
+function SearchContent() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
@@ -304,5 +305,21 @@ export default function SearchPage() {
         )}
       </Container>
     </Box>
+  );
+}
+
+function SearchLoadingFallback() {
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <CircularProgress />
+    </Box>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<SearchLoadingFallback />}>
+      <SearchContent />
+    </Suspense>
   );
 }
