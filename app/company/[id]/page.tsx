@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Card from '@mui/material/Card';
@@ -13,7 +13,15 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Grid2 from '@mui/material/Unstable_Grid2';
 import Chip from '@mui/material/Chip';
+import Divider from '@mui/material/Divider';
+import TextField from '@mui/material/TextField';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 import CircularProgress from '@mui/material/CircularProgress';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import BusinessIcon from '@mui/icons-material/Business';
 import PeopleIcon from '@mui/icons-material/People';
@@ -60,11 +68,24 @@ interface Company {
 
 export default function CompanyPage() {
   const params = useParams();
+  const router = useRouter();
   const companyId = params.id as string;
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editData, setEditData] = useState({
+    name: '',
+    tagline: '',
+    description: '',
+    industry: '',
+    companySize: '',
+    headquarters: '',
+    founded: '',
+    specialties: '',
+    website: '',
+  });
 
   useEffect(() => {
     fetchCompany();
@@ -76,6 +97,17 @@ export default function CompanyPage() {
       if (response.ok) {
         const data = await response.json();
         setCompany(data);
+        setEditData({
+          name: data.name,
+          tagline: data.tagline || '',
+          description: data.description || '',
+          industry: data.industry || '',
+          companySize: data.companySize || '',
+          headquarters: data.headquarters || '',
+          founded: data.founded || '',
+          specialties: data.specialties || '',
+          website: data.website || '',
+        });
       }
     } catch (error) {
       console.error('Error fetching company:', error);
@@ -86,6 +118,32 @@ export default function CompanyPage() {
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
+  };
+
+  const handleEditCompany = async () => {
+    try {
+      const response = await fetch(`/api/companies/${companyId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editData),
+      });
+      if (response.ok) {
+        setEditOpen(false);
+        fetchCompany();
+      }
+    } catch (error) {
+      console.error('Error updating company:', error);
+    }
+  };
+
+  const handleDeleteCompany = async () => {
+    if (!window.confirm('Are you sure you want to delete this company?')) return;
+    try {
+      const response = await fetch(`/api/companies/${companyId}`, { method: 'DELETE' });
+      if (response.ok) router.push('/company');
+    } catch (error) {
+      console.error('Error deleting company:', error);
+    }
   };
 
   const formatFollowers = (num: number) => {
@@ -187,6 +245,23 @@ export default function CompanyPage() {
                       Visit website
                     </Button>
                   )}
+                  <Button
+                    variant="outlined"
+                    startIcon={<EditIcon />}
+                    onClick={() => setEditOpen(true)}
+                    sx={{ textTransform: 'none', borderRadius: 3 }}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                    onClick={handleDeleteCompany}
+                    sx={{ textTransform: 'none', borderRadius: 3 }}
+                  >
+                    Delete
+                  </Button>
                 </Box>
               </CardContent>
             </Card>
@@ -446,6 +521,81 @@ export default function CompanyPage() {
             )}
           </Grid2>
         </Grid2>
+        {/* Edit Company Dialog */}
+        <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle sx={{ fontWeight: 600 }}>Edit Company</DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+              <TextField
+                label="Company Name"
+                fullWidth
+                value={editData.name}
+                onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+              />
+              <TextField
+                label="Tagline"
+                fullWidth
+                value={editData.tagline}
+                onChange={(e) => setEditData({ ...editData, tagline: e.target.value })}
+              />
+              <TextField
+                label="Description"
+                fullWidth
+                multiline
+                rows={3}
+                value={editData.description}
+                onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+              />
+              <TextField
+                label="Industry"
+                fullWidth
+                value={editData.industry}
+                onChange={(e) => setEditData({ ...editData, industry: e.target.value })}
+              />
+              <TextField
+                label="Company Size"
+                fullWidth
+                value={editData.companySize}
+                onChange={(e) => setEditData({ ...editData, companySize: e.target.value })}
+              />
+              <TextField
+                label="Headquarters"
+                fullWidth
+                value={editData.headquarters}
+                onChange={(e) => setEditData({ ...editData, headquarters: e.target.value })}
+              />
+              <TextField
+                label="Founded"
+                fullWidth
+                value={editData.founded}
+                onChange={(e) => setEditData({ ...editData, founded: e.target.value })}
+              />
+              <TextField
+                label="Specialties"
+                fullWidth
+                value={editData.specialties}
+                onChange={(e) => setEditData({ ...editData, specialties: e.target.value })}
+              />
+              <TextField
+                label="Website"
+                fullWidth
+                value={editData.website}
+                onChange={(e) => setEditData({ ...editData, website: e.target.value })}
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ p: 2 }}>
+            <Button onClick={() => setEditOpen(false)} sx={{ textTransform: 'none' }}>Cancel</Button>
+            <Button
+              variant="contained"
+              onClick={handleEditCompany}
+              disabled={!editData.name}
+              sx={{ textTransform: 'none', borderRadius: 3 }}
+            >
+              Save Changes
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Container>
     </Box>
   );

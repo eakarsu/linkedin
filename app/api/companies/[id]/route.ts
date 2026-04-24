@@ -49,3 +49,50 @@ export async function GET(
     return NextResponse.json({ error: 'Failed to fetch company' }, { status: 500 });
   }
 }
+
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+
+    const company = await prisma.company.update({
+      where: { id },
+      data: {
+        name: body.name,
+        tagline: body.tagline,
+        description: body.description,
+        industry: body.industry,
+        companySize: body.companySize,
+        headquarters: body.headquarters,
+        founded: body.founded,
+        specialties: body.specialties,
+        website: body.website,
+      },
+    });
+
+    return NextResponse.json(company);
+  } catch (error) {
+    console.error('Error updating company:', error);
+    return NextResponse.json({ error: 'Failed to update company' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    await prisma.companyEmployee.deleteMany({ where: { companyId: id } });
+    await prisma.company.delete({ where: { id } });
+
+    return NextResponse.json({ message: 'Company deleted' });
+  } catch (error) {
+    console.error('Error deleting company:', error);
+    return NextResponse.json({ error: 'Failed to delete company' }, { status: 500 });
+  }
+}

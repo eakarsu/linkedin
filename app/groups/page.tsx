@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Card from '@mui/material/Card';
@@ -52,6 +53,7 @@ interface Group {
 }
 
 export default function GroupsPage() {
+  const router = useRouter();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
@@ -212,7 +214,10 @@ export default function GroupsPage() {
         <Grid2 container spacing={3}>
           {filteredGroups.map((group) => (
             <Grid2 key={group.id} xs={12} md={6} lg={4}>
-              <Card sx={{ borderRadius: 2, height: '100%', display: 'flex', flexDirection: 'column', '&:hover': { boxShadow: 4 } }}>
+              <Card
+                sx={{ borderRadius: 2, height: '100%', display: 'flex', flexDirection: 'column', '&:hover': { boxShadow: 4 }, cursor: 'pointer' }}
+                onClick={() => router.push(`/groups/${group.id}`)}
+              >
                 {/* Cover Image */}
                 <Box
                   sx={{
@@ -311,7 +316,7 @@ export default function GroupsPage() {
                   <Button
                     variant="contained"
                     fullWidth
-                    onClick={() => handleJoinGroup(group.id)}
+                    onClick={(e) => { e.stopPropagation(); handleJoinGroup(group.id); }}
                     sx={{ borderRadius: 2, mt: 'auto' }}
                   >
                     Join Group

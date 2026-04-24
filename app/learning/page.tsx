@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Card from '@mui/material/Card';
@@ -44,6 +45,7 @@ interface Enrollment {
 }
 
 export default function LearningPage() {
+  const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
   const [myLearning, setMyLearning] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -167,7 +169,10 @@ export default function LearningPage() {
               <Grid2 container spacing={2}>
                 {myLearning.slice(0, 4).map((enrollment) => (
                   <Grid2 key={enrollment.id} xs={12} sm={6} md={3}>
-                    <Card sx={{ border: '1px solid #e0e0e0', boxShadow: 'none', '&:hover': { boxShadow: 2 }, cursor: 'pointer' }}>
+                    <Card
+                      sx={{ border: '1px solid #e0e0e0', boxShadow: 'none', '&:hover': { boxShadow: 2 }, cursor: 'pointer' }}
+                      onClick={() => router.push(`/learning/${enrollment.course.id}`)}
+                    >
                       <Box
                         sx={{
                           height: 120,
@@ -245,7 +250,10 @@ export default function LearningPage() {
             <Grid2 container spacing={3}>
               {filteredCourses.map((course) => (
                 <Grid2 key={course.id} xs={12} sm={6} md={4}>
-                  <Card sx={{ border: '1px solid #e0e0e0', boxShadow: 'none', '&:hover': { boxShadow: 3 }, cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                  <Card
+                    sx={{ border: '1px solid #e0e0e0', boxShadow: 'none', '&:hover': { boxShadow: 3 }, cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column' }}
+                    onClick={() => router.push(`/learning/${course.id}`)}
+                  >
                     <Box
                       sx={{
                         height: 160,
@@ -320,7 +328,7 @@ export default function LearningPage() {
                         <Button
                           variant="contained"
                           size="small"
-                          onClick={() => handleEnroll(course.id)}
+                          onClick={(e) => { e.stopPropagation(); handleEnroll(course.id); }}
                           sx={{ borderRadius: 2, ml: 'auto' }}
                         >
                           {course.isFree ? 'Start Free' : 'Enroll'}

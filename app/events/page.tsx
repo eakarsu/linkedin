@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Card from '@mui/material/Card';
@@ -58,6 +59,7 @@ interface Event {
 }
 
 export default function EventsPage() {
+  const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
@@ -254,7 +256,10 @@ export default function EventsPage() {
         <Grid2 container spacing={3}>
           {filteredEvents.map((event) => (
             <Grid2 key={event.id} xs={12} md={6} lg={4}>
-              <Card sx={{ borderRadius: 2, height: '100%', display: 'flex', flexDirection: 'column', '&:hover': { boxShadow: 4 } }}>
+              <Card
+                sx={{ borderRadius: 2, height: '100%', display: 'flex', flexDirection: 'column', '&:hover': { boxShadow: 4 }, cursor: 'pointer' }}
+                onClick={() => router.push(`/events/${event.id}`)}
+              >
                 {event.image && (
                   <Box
                     sx={{
@@ -336,7 +341,7 @@ export default function EventsPage() {
                           variant="contained"
                           size="small"
                           fullWidth
-                          onClick={() => handleAttend(event.id, 'going')}
+                          onClick={(e) => { e.stopPropagation(); handleAttend(event.id, 'going'); }}
                           sx={{ borderRadius: 2 }}
                         >
                           Attend
@@ -344,7 +349,7 @@ export default function EventsPage() {
                         <Button
                           variant="outlined"
                           size="small"
-                          onClick={() => handleAttend(event.id, 'interested')}
+                          onClick={(e) => { e.stopPropagation(); handleAttend(event.id, 'interested'); }}
                           sx={{ borderRadius: 2 }}
                         >
                           Interested

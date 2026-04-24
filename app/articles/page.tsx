@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Card from '@mui/material/Card';
@@ -42,6 +43,7 @@ interface Article {
 }
 
 export default function ArticlesPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
   const [articleTitle, setArticleTitle] = useState('');
@@ -161,7 +163,7 @@ export default function ArticlesPage() {
                   </Card>
                 ) : articles.length > 0 ? (
                   articles.map((article) => (
-                    <Card key={article.id} sx={{ mb: 2, borderRadius: 2, '&:hover': { boxShadow: 3 }, cursor: 'pointer' }}>
+                    <Card key={article.id} sx={{ mb: 2, borderRadius: 2, '&:hover': { boxShadow: 3 }, cursor: 'pointer' }} onClick={() => router.push(`/articles/${article.id}`)}>
                       <Grid2 container>
                         <Grid2 xs={12} md={article.image ? 8 : 12}>
                           <CardContent>
@@ -245,7 +247,7 @@ export default function ArticlesPage() {
                   const myArticles = articles.filter(article => article.author.id === currentUserId);
                   return myArticles.length > 0 ? (
                     myArticles.map((article) => (
-                      <Card key={article.id} sx={{ mb: 2, borderRadius: 2, '&:hover': { boxShadow: 3 }, cursor: 'pointer' }}>
+                      <Card key={article.id} sx={{ mb: 2, borderRadius: 2, '&:hover': { boxShadow: 3 }, cursor: 'pointer' }} onClick={() => router.push(`/articles/${article.id}`)}>
                         <CardContent>
                           <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
                             {article.title}

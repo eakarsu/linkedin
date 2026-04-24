@@ -547,6 +547,11 @@ async function main() {
     { name: 'Spotify', tagline: 'Audio Streaming', industry: 'Entertainment', companySize: '5,000+ employees', headquarters: 'Stockholm, Sweden', founded: '2006', specialties: 'Music Streaming, Podcasts, Audio', website: 'https://spotify.com' },
     { name: 'Airbnb', tagline: 'Travel & Hospitality', industry: 'Travel', companySize: '5,000+ employees', headquarters: 'San Francisco, CA', founded: '2008', specialties: 'Travel, Accommodations, Experiences', website: 'https://airbnb.com' },
     { name: 'Stripe', tagline: 'Financial Infrastructure', industry: 'Fintech', companySize: '5,000+ employees', headquarters: 'San Francisco, CA', founded: '2010', specialties: 'Payments, Financial Services, APIs', website: 'https://stripe.com' },
+    { name: 'Salesforce', tagline: 'Customer Relationship Management', industry: 'Technology', companySize: '50,000+ employees', headquarters: 'San Francisco, CA', founded: '1999', specialties: 'CRM, Cloud, AI, Analytics, Sales', website: 'https://salesforce.com' },
+    { name: 'Adobe', tagline: 'Creativity for All', industry: 'Technology', companySize: '25,000+ employees', headquarters: 'San Jose, CA', founded: '1982', specialties: 'Creative Software, Digital Marketing, Document Management', website: 'https://adobe.com' },
+    { name: 'Uber', tagline: 'Ride-hailing & Delivery', industry: 'Transportation', companySize: '30,000+ employees', headquarters: 'San Francisco, CA', founded: '2009', specialties: 'Ride-sharing, Food Delivery, Freight', website: 'https://uber.com' },
+    { name: 'Shopify', tagline: 'Commerce Platform', industry: 'E-commerce', companySize: '10,000+ employees', headquarters: 'Ottawa, Canada', founded: '2006', specialties: 'E-commerce, Payments, POS, Shipping', website: 'https://shopify.com' },
+    { name: 'GitHub', tagline: 'Where the World Builds Software', industry: 'Technology', companySize: '5,000+ employees', headquarters: 'San Francisco, CA', founded: '2008', specialties: 'Version Control, Collaboration, Open Source, DevOps', website: 'https://github.com' },
   ];
 
   const createdCompanies = [];
@@ -603,6 +608,9 @@ async function main() {
     { title: 'Leadership & Management Skills', instructor: 'Chris Croft', duration: '5h 15m', level: 'Beginner', category: 'Business', rating: 4.5 },
     { title: 'Data Analysis with SQL', instructor: 'Maven Analytics', duration: '9h 40m', level: 'Intermediate', category: 'Data Science', rating: 4.7 },
     { title: 'Figma UI/UX Design', instructor: 'Daniel Walter Scott', duration: '11h 20m', level: 'Intermediate', category: 'Design', rating: 4.8 },
+    { title: 'TypeScript for Professionals', instructor: 'Matt Pocock', duration: '10h 15m', level: 'Advanced', category: 'Programming', rating: 4.9 },
+    { title: 'Cybersecurity Fundamentals', instructor: 'Nathan House', duration: '16h 30m', level: 'Beginner', category: 'Cloud Computing', rating: 4.7 },
+    { title: 'Agile Project Management', instructor: 'Angela Yu', duration: '7h 45m', level: 'Intermediate', category: 'Business', rating: 4.6 },
   ];
 
   const createdCourses = [];
@@ -659,6 +667,11 @@ async function main() {
     { name: 'Data Science & Analytics', industry: 'Technology', description: 'For data professionals to share knowledge and opportunities.' },
     { name: 'Marketing Professionals', industry: 'Marketing', description: 'Digital marketing, SEO, content strategy discussions.' },
     { name: 'Tech Leadership Forum', industry: 'Technology', description: 'For CTOs, VPs, and engineering leaders.' },
+    { name: 'Cybersecurity Professionals', industry: 'Technology', description: 'Stay updated on the latest security threats and best practices.' },
+    { name: 'Mobile App Developers', industry: 'Technology', description: 'iOS, Android, and cross-platform mobile development discussions.' },
+    { name: 'Finance & Investment Club', industry: 'Finance', description: 'Discuss market trends, investment strategies, and fintech innovations.' },
+    { name: 'Healthcare Innovation', industry: 'Healthcare', description: 'Technology and innovation in the healthcare industry.' },
+    { name: 'Freelancers & Consultants', industry: 'Business', description: 'Tips, resources, and networking for independent professionals.' },
   ];
 
   const createdGroups = [];
@@ -748,6 +761,9 @@ async function main() {
     { title: 'Networking Happy Hour', type: 'in-person', description: 'Casual networking with tech professionals.' },
     { title: 'Women in Tech Conference', type: 'hybrid', description: 'Celebrating and empowering women in technology.' },
     { title: 'DevOps Best Practices', type: 'online', description: 'Learn DevOps from Netflix, Google, and Amazon engineers.' },
+    { title: 'Cybersecurity Awareness Summit', type: 'hybrid', description: 'Learn about the latest cybersecurity threats and defense strategies.' },
+    { title: 'Mobile Development Workshop', type: 'online', description: 'Hands-on workshop for building cross-platform mobile apps.' },
+    { title: 'Tech Career Fair 2024', type: 'in-person', description: 'Meet recruiters from top tech companies and explore career opportunities.' },
   ];
 
   const createdEvents = [];

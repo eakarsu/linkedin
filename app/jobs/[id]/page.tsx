@@ -22,6 +22,8 @@ import WorkIcon from '@mui/icons-material/Work';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import BusinessIcon from '@mui/icons-material/Business';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 interface JobData {
   id: string;
@@ -51,6 +53,18 @@ export default function JobDetailPage() {
   const [resume, setResume] = useState('');
   const [applying, setApplying] = useState(false);
   const [hasApplied, setHasApplied] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editData, setEditData] = useState({
+    title: '',
+    company: '',
+    location: '',
+    type: '',
+    experienceLevel: '',
+    salary: '',
+    description: '',
+    requirements: '',
+    benefits: '',
+  });
 
   useEffect(() => {
     if (params.id) {
@@ -65,6 +79,17 @@ export default function JobDetailPage() {
       if (response.ok) {
         const data = await response.json();
         setJob(data);
+        setEditData({
+          title: data.title,
+          company: data.company,
+          location: data.location,
+          type: data.type,
+          experienceLevel: data.experienceLevel || '',
+          salary: data.salary || '',
+          description: data.description,
+          requirements: data.requirements || '',
+          benefits: data.benefits || '',
+        });
       } else if (response.status === 404) {
         router.push('/jobs');
       }
@@ -123,6 +148,32 @@ export default function JobDetailPage() {
       alert('Failed to submit application');
     } finally {
       setApplying(false);
+    }
+  };
+
+  const handleEditJob = async () => {
+    try {
+      const response = await fetch(`/api/jobs/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editData),
+      });
+      if (response.ok) {
+        setEditDialogOpen(false);
+        fetchJob();
+      }
+    } catch (error) {
+      console.error('Error updating job:', error);
+    }
+  };
+
+  const handleDeleteJob = async () => {
+    if (!window.confirm('Are you sure you want to delete this job?')) return;
+    try {
+      const response = await fetch(`/api/jobs/${params.id}`, { method: 'DELETE' });
+      if (response.ok) router.push('/jobs');
+    } catch (error) {
+      console.error('Error deleting job:', error);
     }
   };
 
@@ -324,7 +375,7 @@ export default function JobDetailPage() {
                 )}
 
                 {job.salary && (
-                  <Box>
+                  <Box sx={{ mb: 2 }}>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
                       Salary
                     </Typography>
@@ -333,10 +384,119 @@ export default function JobDetailPage() {
                     </Typography>
                   </Box>
                 )}
+
+                <Divider sx={{ my: 2 }} />
+
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<EditIcon />}
+                    fullWidth
+                    onClick={() => setEditDialogOpen(true)}
+                    sx={{ textTransform: 'none', borderRadius: 2 }}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                    fullWidth
+                    onClick={handleDeleteJob}
+                    sx={{ textTransform: 'none', borderRadius: 2 }}
+                  >
+                    Delete
+                  </Button>
+                </Box>
               </CardContent>
             </Card>
           </Grid2>
         </Grid2>
+
+        {/* Edit Job Dialog */}
+        <Dialog
+          open={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle sx={{ fontWeight: 600 }}>Edit Job</DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+              <TextField
+                label="Job Title"
+                fullWidth
+                value={editData.title}
+                onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+              />
+              <TextField
+                label="Company"
+                fullWidth
+                value={editData.company}
+                onChange={(e) => setEditData({ ...editData, company: e.target.value })}
+              />
+              <TextField
+                label="Location"
+                fullWidth
+                value={editData.location}
+                onChange={(e) => setEditData({ ...editData, location: e.target.value })}
+              />
+              <TextField
+                label="Type"
+                fullWidth
+                value={editData.type}
+                onChange={(e) => setEditData({ ...editData, type: e.target.value })}
+              />
+              <TextField
+                label="Experience Level"
+                fullWidth
+                value={editData.experienceLevel}
+                onChange={(e) => setEditData({ ...editData, experienceLevel: e.target.value })}
+              />
+              <TextField
+                label="Salary"
+                fullWidth
+                value={editData.salary}
+                onChange={(e) => setEditData({ ...editData, salary: e.target.value })}
+              />
+              <TextField
+                label="Description"
+                fullWidth
+                multiline
+                rows={4}
+                value={editData.description}
+                onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+              />
+              <TextField
+                label="Requirements"
+                fullWidth
+                multiline
+                rows={3}
+                value={editData.requirements}
+                onChange={(e) => setEditData({ ...editData, requirements: e.target.value })}
+              />
+              <TextField
+                label="Benefits"
+                fullWidth
+                multiline
+                rows={3}
+                value={editData.benefits}
+                onChange={(e) => setEditData({ ...editData, benefits: e.target.value })}
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ p: 2 }}>
+            <Button onClick={() => setEditDialogOpen(false)} sx={{ textTransform: 'none' }}>Cancel</Button>
+            <Button
+              variant="contained"
+              onClick={handleEditJob}
+              disabled={!editData.title}
+              sx={{ textTransform: 'none', borderRadius: 3 }}
+            >
+              Save Changes
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {/* Application Dialog */}
         <Dialog
