@@ -309,6 +309,12 @@ export default function Header() {
             </ListItemIcon>
             <ListItemText>Articles</ListItemText>
           </MenuItem>
+          <MenuItem onClick={() => handleMenuNavigate('/network-fit')}>
+            <ListItemIcon>
+              <PeopleIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Network Fit</ListItemText>
+          </MenuItem>
         </Menu>
 
         {/* Profile Menu */}
