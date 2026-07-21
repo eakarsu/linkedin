@@ -11,7 +11,7 @@ import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
-import Grid2 from '@mui/material/Unstable_Grid2';
+import Grid2 from '@mui/material/GridLegacy';
 import IconButton from '@mui/material/IconButton';
 import Chip from '@mui/material/Chip';
 import LocationOnIcon from '@mui/icons-material/LocationOn';

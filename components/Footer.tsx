@@ -2,7 +2,7 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Link from 'next/link';
-import Grid2 from '@mui/material/Unstable_Grid2';
+import Grid2 from '@mui/material/GridLegacy';
 
 const footerLinks = {
   'Navigation': [

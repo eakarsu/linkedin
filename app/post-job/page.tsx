@@ -12,7 +12,7 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
-import Grid from '@mui/material/Unstable_Grid2';
+import Grid from '@mui/material/GridLegacy';
 import Alert from '@mui/material/Alert';
 import WorkIcon from '@mui/icons-material/Work';
 

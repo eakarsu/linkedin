@@ -4,7 +4,7 @@ import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Button from '@mui/material/Button';
-import Grid from '@mui/material/Unstable_Grid2';
+import Grid from '@mui/material/GridLegacy';
 
 const features = [
   { title: 'Stay Connected', description: 'Keep up with your network and never miss important updates.' },

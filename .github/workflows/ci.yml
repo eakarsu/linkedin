@@ -1,0 +1,66 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_USER: linkedin
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: linkedin_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U linkedin -d linkedin_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://linkedin:ci-only-password@localhost:5432/linkedin_test
+      NEXTAUTH_URL: http://localhost:3000
+      ALLOW_PUBLIC_REGISTRATION: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.1.0
+          cache: npm
+      - name: Generate ephemeral workflow credentials
+        run: |
+          echo "NEXTAUTH_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          echo "SALES_WORKER_TOKEN=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          echo "SALES_WEBHOOK_SECRET_MAIL_TEST=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma validate
+      - name: Apply migrations to a fresh database
+        run: npx prisma migrate deploy
+      - name: Prove migration deploy is repeatable
+        run: npx prisma migrate deploy
+      - name: Reject Prisma schema drift
+        run: npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code
+      - run: npm test
+      - run: npm run lint:workflow
+      - run: npx tsc --noEmit
+      - run: npm run build
+      - name: Enforce dependency policy and the pinned upstream exception
+        run: npm run audit:dependencies
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2

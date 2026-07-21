@@ -9,7 +9,7 @@ import CardContent from '@mui/material/CardContent';
 import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
-import Grid2 from '@mui/material/Unstable_Grid2';
+import Grid2 from '@mui/material/GridLegacy';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import PeopleIcon from '@mui/icons-material/People';
@@ -280,14 +280,15 @@ export default function NetworkPage() {
     }
   };
 
-  const handleAccept = async (requestId: string, senderId: string) => {
+  const handleAccept = async (requestId: string, expectedVersion: number) => {
     try {
       const response = await fetch(`/api/connections/requests/${requestId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Idempotency-Key': crypto.randomUUID(),
         },
-        body: JSON.stringify({ action: 'accept' }),
+        body: JSON.stringify({ action: 'accept', expectedVersion }),
       });
 
       if (response.ok) {
@@ -300,14 +301,15 @@ export default function NetworkPage() {
     }
   };
 
-  const handleIgnore = async (requestId: string) => {
+  const handleIgnore = async (requestId: string, expectedVersion: number) => {
     try {
       const response = await fetch(`/api/connections/requests/${requestId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Idempotency-Key': crypto.randomUUID(),
         },
-        body: JSON.stringify({ action: 'reject' }),
+        body: JSON.stringify({ action: 'reject', expectedVersion }),
       });
 
       if (response.ok) {
@@ -322,12 +324,16 @@ export default function NetworkPage() {
 
   const handleConnect = async (userId: string, userName: string) => {
     try {
-      const response = await fetch('/api/connections', {
+      const response = await fetch('/api/connections/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Idempotency-Key': crypto.randomUUID(),
         },
-        body: JSON.stringify({ connectedId: userId }),
+        body: JSON.stringify({
+          recipientId: userId,
+          purpose: 'professional_networking',
+        }),
       });
 
       if (response.ok) {
@@ -754,7 +760,7 @@ export default function NetworkPage() {
                               <Button
                                 size="small"
                                 variant="outlined"
-                                onClick={() => handleIgnore(request.id)}
+                                onClick={() => handleIgnore(request.id, request.version)}
                                 sx={{ textTransform: 'none', borderRadius: 3 }}
                               >
                                 Ignore
@@ -762,7 +768,7 @@ export default function NetworkPage() {
                               <Button
                                 size="small"
                                 variant="contained"
-                                onClick={() => handleAccept(request.id, request.sender?.id)}
+                                onClick={() => handleAccept(request.id, request.version)}
                                 sx={{ textTransform: 'none', borderRadius: 3 }}
                               >
                                 Accept

@@ -8,48 +8,57 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(uuid())
-  name          String
-  email         String   @unique
-  password      String   @default("changeme")
-  title         String?
-  location      String?
-  avatar        String?
-  coverImage    String?
-  bio           String?
-  experience    Json?
-  education     Json?
-  skills        Json?
-  languages     Json?
-  projects      Json?
+  id             String   @id @default(uuid())
+  name           String
+  email          String   @unique
+  password       String
+  title          String?
+  location       String?
+  avatar         String?
+  coverImage     String?
+  bio            String?
+  experience     Json?
+  education      Json?
+  skills         Json?
+  languages      Json?
+  projects       Json?
   certifications Json?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  posts            Post[]
-  articles         Article[]
-  comments         Comment[]
-  likes            Like[]
-  connections      Connection[]      @relation("UserConnections")
-  connectedBy      Connection[]      @relation("ConnectedTo")
-  sentMessages     Message[]         @relation("SentMessages")
-  receivedMessages Message[]         @relation("ReceivedMessages")
-  notifications    Notification[]
-  actedNotifications Notification[] @relation("NotificationActor")
-  jobApplications  JobApplication[]
-  jobsPosted       Job[]             @relation("JobPoster")
-  savedPosts       Json?
-  stories          Story[]
-  profileCompleteness Int?           @default(0)
+  posts                    Post[]
+  articles                 Article[]
+  comments                 Comment[]
+  likes                    Like[]
+  connections              Connection[]            @relation("UserConnections")
+  connectedBy              Connection[]            @relation("ConnectedTo")
+  outreachPreference       OutreachPreference?
+  connectionIdempotency    ConnectionIdempotency[] @relation("ConnectionIdempotencyActor")
+  connectionAuditAsActor   ConnectionAuditEvent[]  @relation("ConnectionAuditActor")
+  connectionAuditAsSubject ConnectionAuditEvent[]  @relation("ConnectionAuditSubject")
+  sentMessages             Message[]               @relation("SentMessages")
+  receivedMessages         Message[]               @relation("ReceivedMessages")
+  notifications            Notification[]
+  actedNotifications       Notification[]          @relation("NotificationActor")
+  jobApplications          JobApplication[]
+  jobsPosted               Job[]                   @relation("JobPoster")
+  savedPosts               Json?
+  stories                  Story[]
+  profileCompleteness      Int?                    @default(0)
 
   // New relations
-  companyEmployments CompanyEmployee[]
-  organizedEvents    Event[]           @relation("EventOrganizer")
-  eventAttendances   EventAttendee[]
-  ownedGroups        Group[]           @relation("GroupOwner")
-  groupMemberships   GroupMember[]
-  groupPosts         GroupPost[]
-  courseEnrollments  CourseEnrollment[]
+  companyEmployments     CompanyEmployee[]
+  organizedEvents        Event[]            @relation("EventOrganizer")
+  eventAttendances       EventAttendee[]
+  ownedGroups            Group[]            @relation("GroupOwner")
+  groupMemberships       GroupMember[]
+  groupPosts             GroupPost[]
+  courseEnrollments      CourseEnrollment[]
+  salesMemberships       SalesMembership[]
+  salesOwnedLeads        SalesLead[]        @relation("SalesLeadOwner")
+  salesSubmittedOutreach SalesOutreach[]    @relation("SalesOutreachSubmitter")
+  salesReviewedOutreach  SalesOutreach[]    @relation("SalesOutreachReviewer")
+  salesAuditEvents       SalesAuditEvent[]
 }
 
 model Post {
@@ -109,15 +118,69 @@ model Like {
 }
 
 model Connection {
-  id          String   @id @default(uuid())
+  id          String                 @id @default(uuid())
   userId      String
-  user        User     @relation("UserConnections", fields: [userId], references: [id], onDelete: Cascade)
+  user        User                   @relation("UserConnections", fields: [userId], references: [id], onDelete: Cascade)
   connectedId String
-  connected   User     @relation("ConnectedTo", fields: [connectedId], references: [id], onDelete: Cascade)
-  status      String   @default("pending") // pending, accepted, rejected
-  createdAt   DateTime @default(now())
+  connected   User                   @relation("ConnectedTo", fields: [connectedId], references: [id], onDelete: Cascade)
+  status      String                 @default("pending") // pending, accepted, rejected, withdrawn, expired
+  purpose     String                 @default("professional_networking")
+  message     String?
+  version     Int                    @default(1)
+  expiresAt   DateTime               @default(dbgenerated("(CURRENT_TIMESTAMP + '14 days'::interval)"))
+  respondedAt DateTime?
+  withdrawnAt DateTime?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  auditEvents ConnectionAuditEvent[]
 
   @@unique([userId, connectedId])
+  @@index([userId, createdAt])
+  @@index([connectedId, status])
+}
+
+model OutreachPreference {
+  userId                  String    @id
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  allowConnectionRequests Boolean   @default(true)
+  suppressionReason       String?
+  suppressedAt            DateTime?
+  version                 Int       @default(1)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+}
+
+model ConnectionIdempotency {
+  id             String   @id @default(uuid())
+  actorId        String
+  actor          User     @relation("ConnectionIdempotencyActor", fields: [actorId], references: [id], onDelete: Restrict)
+  operation      String
+  key            String
+  requestHash    String
+  responseStatus Int
+  responseBody   Json
+  createdAt      DateTime @default(now())
+
+  @@unique([actorId, operation, key])
+  @@index([createdAt])
+}
+
+model ConnectionAuditEvent {
+  id            String      @id @default(uuid())
+  connectionId  String?
+  connection    Connection? @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  subjectUserId String
+  subjectUser   User        @relation("ConnectionAuditSubject", fields: [subjectUserId], references: [id], onDelete: Restrict)
+  actorId       String
+  actor         User        @relation("ConnectionAuditActor", fields: [actorId], references: [id], onDelete: Restrict)
+  eventType     String
+  payload       Json
+  previousHash  String?
+  eventHash     String      @unique
+  occurredAt    DateTime    @default(now())
+
+  @@index([connectionId, occurredAt])
+  @@index([subjectUserId, occurredAt])
 }
 
 model Job {
@@ -131,8 +194,8 @@ model Job {
   description     String
   requirements    String?
   benefits        String?
-  posterId        String
-  poster          User             @relation("JobPoster", fields: [posterId], references: [id], onDelete: Cascade)
+  posterId        String?
+  poster          User?            @relation("JobPoster", fields: [posterId], references: [id], onDelete: SetNull)
   companyId       String?
   companyRef      Company?         @relation("CompanyJobs", fields: [companyId], references: [id], onDelete: SetNull)
   createdAt       DateTime         @default(now())
@@ -174,7 +237,7 @@ model Notification {
   actor     User?    @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
   postId    String?
   post      Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
-  type      String   // like, comment, connection, message, job
+  type      String // like, comment, connection, message, job
   content   String
   link      String?
   read      Boolean  @default(false)
@@ -194,59 +257,59 @@ model Story {
 }
 
 model Company {
-  id          String   @id @default(uuid())
-  name        String
-  tagline     String?
-  description String?
-  industry    String?
-  companySize String?
+  id           String   @id @default(uuid())
+  name         String
+  tagline      String?
+  description  String?
+  industry     String?
+  companySize  String?
   headquarters String?
-  founded     String?
-  specialties String?
-  website     String?
-  logo        String?
-  coverImage  String?
-  followers   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  founded      String?
+  specialties  String?
+  website      String?
+  logo         String?
+  coverImage   String?
+  followers    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  jobs        Job[]    @relation("CompanyJobs")
-  events      Event[]
-  employees   CompanyEmployee[]
+  jobs      Job[]             @relation("CompanyJobs")
+  events    Event[]
+  employees CompanyEmployee[]
 }
 
 model CompanyEmployee {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   companyId String
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String?
   startDate DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@unique([companyId, userId])
 }
 
 model Event {
-  id          String   @id @default(uuid())
+  id          String          @id @default(uuid())
   title       String
   description String?
   image       String?
-  type        String   @default("online") // online, in-person, hybrid
+  type        String          @default("online") // online, in-person, hybrid
   location    String?
   eventUrl    String?
   startDate   DateTime
   endDate     DateTime?
   timezone    String?
   organizerId String
-  organizer   User     @relation("EventOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
+  organizer   User            @relation("EventOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
   companyId   String?
-  company     Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  isPublic    Boolean  @default(true)
+  company     Company?        @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  isPublic    Boolean         @default(true)
   attendees   EventAttendee[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 }
 
 model EventAttendee {
@@ -262,20 +325,20 @@ model EventAttendee {
 }
 
 model Group {
-  id          String   @id @default(uuid())
+  id          String        @id @default(uuid())
   name        String
   description String?
   rules       String?
   image       String?
   coverImage  String?
-  isPublic    Boolean  @default(true)
+  isPublic    Boolean       @default(true)
   industry    String?
   ownerId     String
-  owner       User     @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  owner       User          @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   members     GroupMember[]
   posts       GroupPost[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
 
 model GroupMember {
@@ -309,7 +372,7 @@ model Course {
   thumbnail   String?
   instructor  String
   duration    String?
-  level       String?  // Beginner, Intermediate, Advanced
+  level       String? // Beginner, Intermediate, Advanced
   category    String?
   rating      Float    @default(0)
   students    Int      @default(0)
@@ -322,16 +385,241 @@ model Course {
 }
 
 model CourseEnrollment {
-  id        String   @id @default(uuid())
-  courseId  String
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  progress  Int      @default(0) // percentage 0-100
-  completed Boolean  @default(false)
+  id          String    @id @default(uuid())
+  courseId    String
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  progress    Int       @default(0) // percentage 0-100
+  completed   Boolean   @default(false)
   lastWatched DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@unique([courseId, userId])
+}
+
+model SalesWorkspace {
+  id             String               @id @default(uuid())
+  slug           String               @unique
+  name           String
+  active         Boolean              @default(true)
+  createdAt      DateTime             @default(now())
+  memberships    SalesMembership[]
+  connectors     SalesConnector[]
+  leads          SalesLead[]
+  syncEvents     SalesSyncEvent[]
+  outreach       SalesOutreach[]
+  outbox         SalesOutbox[]
+  providerEvents SalesProviderEvent[]
+  auditEvents    SalesAuditEvent[]
+}
+
+model SalesMembership {
+  workspaceId String
+  workspace   SalesWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  role        String
+  active      Boolean        @default(true)
+  authVersion Int            @default(1)
+  createdAt   DateTime       @default(now())
+
+  @@id([workspaceId, userId])
+  @@index([userId, active])
+}
+
+model SalesConnector {
+  id                      String         @id @default(uuid())
+  workspaceId             String
+  workspace               SalesWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  kind                    String
+  provider                String
+  endpoint                String
+  credentialReference     String
+  sourceContractReference String
+  enabled                 Boolean        @default(true)
+  createdAt               DateTime       @default(now())
+
+  @@unique([workspaceId, kind, provider])
+  @@index([workspaceId, kind, enabled])
+}
+
+model SalesLead {
+  id               String              @id @default(uuid())
+  workspaceId      String
+  workspace        SalesWorkspace      @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  externalCrmId    String
+  displayName      String
+  contactReference String
+  region           String
+  lifecycleState   String              @default("NEW")
+  ownerId          String?
+  owner            User?               @relation("SalesLeadOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  sourceSystem     String
+  sourceRevision   String
+  sourceObservedAt DateTime
+  attribution      Json                @default("{}")
+  qualityFlags     Json                @default("[]")
+  version          Int                 @default(1)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  consentEvents    SalesConsentEvent[]
+  suppressions     SalesSuppression[]
+  outreach         SalesOutreach[]
+  engagements      SalesEngagement[]
+  auditEvents      SalesAuditEvent[]
+
+  @@unique([workspaceId, externalCrmId])
+  @@index([workspaceId, lifecycleState, updatedAt])
+  @@index([workspaceId, contactReference])
+}
+
+model SalesSyncEvent {
+  id               String         @id @default(uuid())
+  workspaceId      String
+  workspace        SalesWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  connectorKind    String
+  direction        String
+  sourceEventId    String
+  payloadSha256    String
+  sourceObservedAt DateTime
+  state            String         @default("APPLIED")
+  createdAt        DateTime       @default(now())
+
+  @@unique([workspaceId, connectorKind, direction, sourceEventId])
+  @@index([workspaceId, connectorKind, createdAt])
+}
+
+model SalesConsentEvent {
+  id               String    @id @default(uuid())
+  leadId           String
+  lead             SalesLead @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  channel          String
+  purpose          String
+  state            String
+  lawfulBasis      String
+  sourceSystem     String
+  sourceEventId    String
+  sourceObservedAt DateTime
+  createdAt        DateTime  @default(now())
+
+  @@unique([sourceSystem, sourceEventId])
+  @@index([leadId, channel, purpose, sourceObservedAt])
+}
+
+model SalesSuppression {
+  id               String    @id @default(uuid())
+  leadId           String
+  lead             SalesLead @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  channel          String
+  reason           String
+  sourceSystem     String
+  sourceEventId    String
+  active           Boolean   @default(true)
+  sourceObservedAt DateTime
+  createdAt        DateTime  @default(now())
+
+  @@unique([sourceSystem, sourceEventId])
+  @@index([leadId, channel, active])
+}
+
+model SalesOutreach {
+  id                String         @id @default(uuid())
+  workspaceId       String
+  workspace         SalesWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  leadId            String
+  lead              SalesLead      @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  channel           String
+  templateId        String
+  campaignId        String
+  idempotencyKey    String
+  state             String
+  submittedById     String
+  submittedBy       User           @relation("SalesOutreachSubmitter", fields: [submittedById], references: [id], onDelete: Restrict)
+  reviewedById      String?
+  reviewedBy        User?          @relation("SalesOutreachReviewer", fields: [reviewedById], references: [id], onDelete: Restrict)
+  reviewNotes       String?
+  scheduledAt       DateTime
+  sentAt            DateTime?
+  providerMessageId String?
+  failureCode       String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@unique([workspaceId, idempotencyKey])
+  @@index([leadId, createdAt])
+  @@index([workspaceId, state, scheduledAt])
+}
+
+model SalesOutbox {
+  id             String         @id @default(uuid())
+  workspaceId    String
+  workspace      SalesWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  aggregateId    String
+  connectorKind  String
+  eventType      String
+  idempotencyKey String
+  payload        Json
+  state          String         @default("QUEUED")
+  attempts       Int            @default(0)
+  nextAttemptAt  DateTime       @default(now())
+  leaseOwner     String?
+  leaseExpiresAt DateTime?
+  lastError      String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([workspaceId, connectorKind, idempotencyKey])
+  @@index([state, nextAttemptAt])
+}
+
+model SalesProviderEvent {
+  id              String         @id @default(uuid())
+  workspaceId     String
+  workspace       SalesWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  provider        String
+  providerEventId String
+  eventType       String
+  payloadSha256   String
+  occurredAt      DateTime
+  createdAt       DateTime       @default(now())
+
+  @@unique([workspaceId, provider, providerEventId])
+  @@index([workspaceId, createdAt])
+}
+
+model SalesEngagement {
+  id               String    @id @default(uuid())
+  leadId           String
+  lead             SalesLead @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  externalEventId  String
+  state            String
+  startsAt         DateTime
+  sourceSystem     String
+  sourceObservedAt DateTime
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@unique([sourceSystem, externalEventId])
+  @@index([leadId, startsAt])
+}
+
+model SalesAuditEvent {
+  sequence     BigInt         @id @default(autoincrement())
+  id           String         @unique @default(uuid())
+  workspaceId  String
+  workspace    SalesWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  actorId      String?
+  actor        User?          @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  leadId       String?
+  lead         SalesLead?     @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  action       String
+  details      Json
+  previousHash String
+  eventHash    String
+  createdAt    DateTime
+
+  @@unique([workspaceId, eventHash])
+  @@index([workspaceId, sequence])
 }

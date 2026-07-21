@@ -1,0 +1,57 @@
+services:
+  database:
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_USER: linkedin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: linkedin
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U linkedin -d linkedin"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  migrate:
+    build:
+      context: .
+      target: migrator
+    environment:
+      DATABASE_URL: postgresql://linkedin:${POSTGRES_PASSWORD}@database:5432/linkedin
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    build:
+      context: .
+      target: runtime
+    environment:
+      DATABASE_URL: postgresql://linkedin:${POSTGRES_PASSWORD}@database:5432/linkedin
+      NEXTAUTH_URL: ${NEXTAUTH_URL:?set NEXTAUTH_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?set NEXTAUTH_SECRET}
+      ALLOW_PUBLIC_REGISTRATION: ${ALLOW_PUBLIC_REGISTRATION:-false}
+      CONNECTION_RATE_LIMIT: ${CONNECTION_RATE_LIMIT:-20}
+      CONNECTION_RATE_WINDOW_HOURS: ${CONNECTION_RATE_WINDOW_HOURS:-24}
+      CONNECTION_REQUEST_TTL_DAYS: ${CONNECTION_REQUEST_TTL_DAYS:-14}
+      SALES_OUTREACH_DAILY_LIMIT: ${SALES_OUTREACH_DAILY_LIMIT:-20}
+      SALES_WORKER_TOKEN: ${SALES_WORKER_TOKEN:?set SALES_WORKER_TOKEN}
+      SALES_CONNECTOR_TOKEN_MAIL_PRIMARY: ${SALES_CONNECTOR_TOKEN_MAIL_PRIMARY:-}
+      SALES_WEBHOOK_SECRET_MAIL_TEST: ${SALES_WEBHOOK_SECRET_MAIL_TEST:-}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "3000:3000"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+volumes:
+  postgres-data:

@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LinkedIn-style professional network
 
-## Getting Started
+A Next.js/PostgreSQL application with governed connection-request and sales-operations workflows. The sales journey ingests deduplicated CRM leads, enrichment, consent, suppression, and calendar events; enforces ownership and lifecycle transitions; requires independent human review before email outreach; and sends through a leased, retrying transactional outbox. Signed provider opt-outs immediately suppress further outreach.
 
-First, run the development server:
+Every mutation requires source or operation idempotency and expected versions are used for state changes. Lifecycle events are stored in append-only, hash-chained audit logs. Connector credentials are referenced by environment-variable name and never stored in the database.
+
+## Local development
+
+Requirements: Node.js 24, npm, and PostgreSQL 17.
 
 ```bash
+cp .env.example .env
+npm ci
+npx prisma generate
+npx prisma migrate deploy
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Set a real `DATABASE_URL` and generate `NEXTAUTH_SECRET` with `openssl rand -base64 48`. Public registration remains disabled unless `ALLOW_PUBLIC_REGISTRATION=true` is an intentional deployment choice. Startup never seeds, migrates, installs packages, deletes caches, or kills unrelated processes.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Verification
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+With `DATABASE_URL` pointing at a disposable migrated test database:
 
-## Learn More
+```bash
+npm test
+npx tsc --noEmit
+npm run build
+npm run audit:dependencies
+```
 
-To learn more about Next.js, take a look at the following resources:
+CI provisions a fresh PostgreSQL service, applies migrations twice to prove repeatability, runs the connection and sales lifecycle/failure-path tests, type-checks, builds, and applies the checked-in dependency advisory policy. Run a trusted scheduler against `POST /api/internal/sales-worker`; see the operations runbook for its authentication and retry contract.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Documentation
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Workflow and API contract](docs/GOVERNED_CONNECTION_REQUESTS.md)
+- [Governed sales operations contract](docs/GOVERNED_SALES_OPERATIONS.md)
+- [Operations and deployment](docs/OPERATIONS.md)
+- [Security policy and boundaries](SECURITY.md)
+- [Original completeness assessment and dated implementation evidence](_COMPLETENESS_REVIEW.md)

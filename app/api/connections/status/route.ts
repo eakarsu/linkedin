@@ -45,7 +45,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ status: 'connected' });
     }
 
-    return NextResponse.json({ status: 'pending' });
+    if (connection.status === 'pending') {
+      return NextResponse.json({ status: 'pending' });
+    }
+
+    return NextResponse.json({ status: 'none' });
   } catch (error) {
     console.error('Error checking connection status:', error);
     return NextResponse.json(
