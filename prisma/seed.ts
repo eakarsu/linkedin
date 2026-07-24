@@ -134,7 +134,16 @@ const messageContents = [
   'I noticed we both worked at {company}. Small world! How did you like it there?'
 ];
 
+function requireDemoPassword() {
+  const password = process.env.DEMO_PASSWORD || process.env.SEED_DEMO_PASSWORD || process.env.DEMO_SEED_PASSWORD || '';
+  if (password.length < 12 || password.length > 1024) throw new Error('DEMO_PASSWORD must contain 12-1024 characters');
+  return password;
+}
+
 async function main() {
+  if (process.env.NODE_ENV === 'production' || process.env.ALLOW_DISPOSABLE_SEED !== 'YES') {
+    throw new Error('Refusing destructive seed outside an explicitly disposable non-production database');
+  }
   console.log('🌱 Starting database seed...');
 
   // Clear existing data
@@ -149,13 +158,13 @@ async function main() {
   await prisma.comment.deleteMany();
   await prisma.article.deleteMany();
   await prisma.post.deleteMany();
-  await prisma.user.deleteMany();
+  await prisma.$executeRawUnsafe('TRUNCATE TABLE "User" CASCADE');
 
   console.log('✅ Cleaned existing data');
 
   // Create users
   console.log('👥 Creating users...');
-  const hashedPassword = await bcrypt.hash('password123', 10);
+  const hashedPassword = await bcrypt.hash(requireDemoPassword(), 10);
   const users = [];
 
   for (let i = 0; i < 30; i++) {
@@ -835,7 +844,7 @@ async function main() {
   console.log(`   • Group Posts: ${groupPostCount}`);
   console.log(`   • Events: ${createdEvents.length}`);
   console.log(`   • Event Attendees: ${attendeeCount}`);
-  console.log('\n💡 You can login with any email (e.g., sarah.johnson@example.com) and password: password123');
+  console.log('Demo login users provisioned from the local environment.');
 }
 
 main()

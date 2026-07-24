@@ -433,7 +433,7 @@ model SalesMembership {
   workspaceId String
   workspace   SalesWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
   userId      String
-  user        User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   role        String
   active      Boolean        @default(true)
   authVersion Int            @default(1)
