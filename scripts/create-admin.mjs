@@ -24,7 +24,10 @@ const prisma = new PrismaClient();
 try {
   await prisma.user.upsert({
     where: { email },
-    update: {},
+    update: {
+      name,
+      password: await bcrypt.hash(password, 12),
+    },
     create: {
       email,
       name,

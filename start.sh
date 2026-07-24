@@ -1,34 +1,45 @@
 #!/usr/bin/env bash
 set -euo pipefail
+project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+set -a
+# shellcheck disable=SC1091
+source "$project_dir/.env"
+set +a
+case "$DATABASE_URL" in
+  *connect_timeout=*) ;;
+  *\?*) export DATABASE_URL="${DATABASE_URL}&connect_timeout=30" ;;
+  *) export DATABASE_URL="${DATABASE_URL}?connect_timeout=30" ;;
+esac
+: "${BACKEND_PORT:?BACKEND_PORT is required}"
+: "${FRONTEND_PORT:?FRONTEND_PORT is required}"
+[[ "$BACKEND_PORT" != "$FRONTEND_PORT" ]] || { echo "BACKEND_PORT and FRONTEND_PORT must differ" >&2; exit 1; }
+for port in "$BACKEND_PORT" "$FRONTEND_PORT"; do
+  [[ "$port" =~ ^[0-9]+$ ]] && (( port >= 1024 && port <= 65535 )) || { echo "Invalid assigned port" >&2; exit 1; }
+  lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1 && { echo "Port $port is occupied" >&2; exit 1; }
+done
+[[ -d "$project_dir/node_modules" ]] || { echo "Dependencies are missing; run npm ci" >&2; exit 1; }
+export NEXTAUTH_URL="http://127.0.0.1:$FRONTEND_PORT"
+cd "$project_dir"
+npm run prisma:generate
+npm run prisma:migrate:deploy
+npm run create-admin
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="${RUNTIME_PROJECT_SOURCE:-$SCRIPT_DIR}"
-
-if [[ ! -f "$PROJECT_DIR/package.json" || ! -d "$PROJECT_DIR/node_modules" ]]; then
-  echo "Project dependencies are missing; run npm ci before startup." >&2
-  exit 1
-fi
-
-: "${DATABASE_URL:?DATABASE_URL is required}"
-: "${NEXTAUTH_SECRET:?NEXTAUTH_SECRET is required}"
-
-APP_PORT="${BACKEND_PORT:-${PORT:-3000}}"
-if [[ ! "$APP_PORT" =~ ^[0-9]+$ ]] || (( APP_PORT < 1024 || APP_PORT > 65535 )); then
-  echo "BACKEND_PORT must be an integer from 1024 through 65535." >&2
-  exit 1
-fi
-
-if [[ ${#NEXTAUTH_SECRET} -lt 32 ]]; then
-  echo "NEXTAUTH_SECRET must contain at least 32 characters." >&2
-  exit 1
-fi
-
-if command -v lsof >/dev/null 2>&1 && lsof -nP -iTCP:"$APP_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
-  echo "Port $APP_PORT is already in use; no process was changed." >&2
-  exit 1
-fi
-
-export PORT="$APP_PORT"
-export NEXTAUTH_URL="${NEXTAUTH_URL:-http://127.0.0.1:$APP_PORT}"
-cd "$PROJECT_DIR"
-exec "$PROJECT_DIR/node_modules/.bin/next" dev --webpack --hostname 127.0.0.1 --port "$APP_PORT"
+api_pid=''; proxy_pid=''
+cleanup() {
+  [[ -n "$proxy_pid" ]] && kill "$proxy_pid" 2>/dev/null || true
+  [[ -n "$api_pid" ]] && kill "$api_pid" 2>/dev/null || true
+  wait 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+npm run dev -- --webpack --hostname 127.0.0.1 --port "$BACKEND_PORT" & api_pid=$!
+for _ in $(seq 1 180); do
+  curl --fail --silent "http://127.0.0.1:$BACKEND_PORT/api/health" >/dev/null 2>&1 && break
+  kill -0 "$api_pid" 2>/dev/null || { echo "Application exited during startup" >&2; wait "$api_pid"; exit 1; }
+  sleep 0.25
+done
+curl --fail --silent "http://127.0.0.1:$BACKEND_PORT/api/health" >/dev/null || { echo "Application readiness timed out" >&2; exit 1; }
+curl --fail --silent "http://127.0.0.1:$BACKEND_PORT/api/auth/providers" >/dev/null
+curl --fail --silent "http://127.0.0.1:$BACKEND_PORT/api/auth/csrf" >/dev/null
+RUNTIME_PROXY_PORT="$FRONTEND_PORT" RUNTIME_PROXY_TARGET_PORT="$BACKEND_PORT" node scripts/runtime-proxy.mjs & proxy_pid=$!
+echo "LinkedIn clone is available at http://127.0.0.1:$FRONTEND_PORT (API $BACKEND_PORT)"
+wait "$api_pid" "$proxy_pid"

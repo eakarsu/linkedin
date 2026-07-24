@@ -59,11 +59,19 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
       }
+      if (token.id) {
+        const current = await prisma.user.findUnique({
+          where: { id: String(token.id) },
+          select: { id: true },
+        });
+        token.invalid = !current;
+      }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
+        (session.user as typeof session.user & { invalid?: boolean }).invalid = Boolean(token.invalid);
       }
       return session;
     },

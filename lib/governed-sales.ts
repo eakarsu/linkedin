@@ -284,7 +284,7 @@ export async function ingestCrmLead(
       details: { eventId: input.eventId, sourceSystem: input.sourceSystem, sourceRevision: input.sourceRevision, qualityFlags },
     });
     return { replayed: false, lead };
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 30_000, timeout: 30_000 });
 }
 
 async function ownedLead(tx: Tx, actor: Actor, leadId: string, roles: Role[]) {
@@ -656,7 +656,7 @@ export async function requestOutreach(
       details: { outreachId: outreach.id, channel: input.channel, campaignId: input.campaignId, region: lead.region },
     });
     return { replayed: false, outreach };
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 30_000, timeout: 30_000 });
 }
 
 export async function reviewOutreach(

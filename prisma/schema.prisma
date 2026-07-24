@@ -61,6 +61,20 @@ model User {
   salesAuditEvents       SalesAuditEvent[]
 }
 
+model RuntimeAiResult {
+  id              String   @id @default(uuid())
+  userId          String
+  prompt          String   @db.Text
+  content         String   @db.Text
+  provider        String
+  model           String
+  providerReceipt Json
+  createdAt       DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("runtime_ai_results")
+}
+
 model Post {
   id        String   @id @default(uuid())
   content   String
