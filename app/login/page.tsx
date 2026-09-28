@@ -60,6 +60,19 @@ export default function LoginPage() {
     }
   };
 
+  const fillDemoCredentials = async () => {
+    setError('');
+    try {
+      const response = await fetch('/api/auth/demo-credentials', { cache: 'no-store' });
+      const credentials = await response.json();
+      if (!response.ok) throw new Error(credentials.error || 'Demo credentials are unavailable');
+      setEmail(credentials.email || '');
+      setPassword(credentials.password || '');
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Demo credentials are unavailable');
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -172,6 +185,10 @@ export default function LoginPage() {
               Forgot password?
             </Link>
 
+            <Button fullWidth type="button" variant="outlined" size="large" onClick={fillDemoCredentials} sx={{ mb: 2, textTransform: 'none', borderRadius: 3, py: 1.5 }}>
+              Auto Fill Demo Credentials
+            </Button>
+
             <Button
               fullWidth
               type="submit"
@@ -180,7 +197,7 @@ export default function LoginPage() {
               disabled={loading}
               sx={{ mb: 2, textTransform: 'none', borderRadius: 3, py: 1.5 }}
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
 
