@@ -62,14 +62,32 @@ export default function LoginPage() {
 
   const fillDemoCredentials = async () => {
     setError('');
+    setLoading(true);
     try {
       const response = await fetch('/api/auth/demo-credentials', { cache: 'no-store' });
       const credentials = await response.json();
       if (!response.ok) throw new Error(credentials.error || 'Demo credentials are unavailable');
-      setEmail(credentials.email || '');
-      setPassword(credentials.password || '');
+      const demoEmail = credentials.email || '';
+      const demoPassword = credentials.password || '';
+      if (!demoEmail || !demoPassword) throw new Error('Demo credentials are unavailable');
+      // Fill the fields, then sign in immediately with the freshly fetched values.
+      setEmail(demoEmail);
+      setPassword(demoPassword);
+      const result = await signIn('credentials', {
+        email: demoEmail,
+        password: demoPassword,
+        redirect: false,
+      });
+      if (result?.error) {
+        setError(result.error);
+      } else {
+        router.push('/');
+        router.refresh();
+      }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Demo credentials are unavailable');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -185,8 +203,8 @@ export default function LoginPage() {
               Forgot password?
             </Link>
 
-            <Button fullWidth type="button" variant="outlined" size="large" onClick={fillDemoCredentials} sx={{ mb: 2, textTransform: 'none', borderRadius: 3, py: 1.5 }}>
-              Auto Fill Demo Credentials
+            <Button fullWidth type="button" variant="outlined" size="large" onClick={fillDemoCredentials} disabled={loading} sx={{ mb: 2, textTransform: 'none', borderRadius: 3, py: 1.5 }}>
+              Auto Fill &amp; Sign In (Demo)
             </Button>
 
             <Button
