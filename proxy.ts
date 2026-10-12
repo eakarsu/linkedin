@@ -23,6 +23,7 @@ export const config = {
     '/jobs/:path*',
     '/messaging/:path*',
     '/notifications/:path*',
+    '/ai-operations/:path*',
     '/login',
     '/signup',
   ],

@@ -194,6 +194,9 @@ export default function Header() {
 
         {/* Navigation Icons */}
         <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <Link href="/ai-operations" style={{ textDecoration: 'none' }}>
+            <NavButton aria-label="AI Operations"><AppsIcon/><Box component="span" sx={{ fontSize: '12px', mt: 0.5 }}>AI Operations</Box></NavButton>
+          </Link>
           <Link href="/" style={{ textDecoration: 'none' }}>
             <NavButton>
               <HomeIcon />

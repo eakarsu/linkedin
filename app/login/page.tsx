@@ -31,7 +31,7 @@ const demoUsers = [
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('password123');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -70,20 +70,8 @@ export default function LoginPage() {
       const demoEmail = credentials.email || '';
       const demoPassword = credentials.password || '';
       if (!demoEmail || !demoPassword) throw new Error('Demo credentials are unavailable');
-      // Fill the fields, then sign in immediately with the freshly fetched values.
       setEmail(demoEmail);
       setPassword(demoPassword);
-      const result = await signIn('credentials', {
-        email: demoEmail,
-        password: demoPassword,
-        redirect: false,
-      });
-      if (result?.error) {
-        setError(result.error);
-      } else {
-        router.push('/');
-        router.refresh();
-      }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Demo credentials are unavailable');
     } finally {
@@ -137,42 +125,27 @@ export default function LoginPage() {
             </Alert>
           )}
 
-          {/* Demo User Selector */}
           <Box sx={{ mb: 3, p: 2, bgcolor: '#f0f7ff', borderRadius: 2, border: '1px solid #0a66c2' }}>
             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: '#0a66c2' }}>
-              Demo Account - Quick Login
+              Demo users
             </Typography>
             <FormControl fullWidth size="small">
               <InputLabel>Select a demo user</InputLabel>
-              <Select
-                value={email}
-                label="Select a demo user"
-                onChange={(e) => setEmail(e.target.value)}
-                sx={{ bgcolor: 'white' }}
-              >
+              <Select value={email} label="Select a demo user" onChange={(e) => { setEmail(e.target.value); setPassword(''); }} sx={{ bgcolor: 'white' }}>
                 {demoUsers.map((user) => (
                   <MenuItem key={user.email} value={user.email}>
                     <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {user.name}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {user.title}
-                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{user.name}</Typography>
+                      <Typography variant="caption" color="text.secondary">{user.title}</Typography>
                     </Box>
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              Password: password123 (pre-filled)
-            </Typography>
           </Box>
 
           <Divider sx={{ mb: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              or enter manually
-            </Typography>
+            <Typography variant="body2" color="text.secondary">or enter manually</Typography>
           </Divider>
 
           <form onSubmit={handleSubmit}>
@@ -196,7 +169,6 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               sx={{ mb: 2 }}
-              helperText="Demo password: password123"
             />
 
             <Link href="#" sx={{ mb: 3, display: 'block', textDecoration: 'none' }}>
@@ -204,7 +176,7 @@ export default function LoginPage() {
             </Link>
 
             <Button fullWidth type="button" variant="outlined" size="large" onClick={fillDemoCredentials} disabled={loading} sx={{ mb: 2, textTransform: 'none', borderRadius: 3, py: 1.5 }}>
-              Auto Fill &amp; Sign In (Demo)
+              Fill demo credentials
             </Button>
 
             <Button
